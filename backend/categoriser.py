@@ -1,5 +1,5 @@
 import os
-import google.generativeai as genai
+from google import genai
 from typing import List
 
 # Allowed categories for the transactions
@@ -45,16 +45,15 @@ def rules_categoriser(description: str) -> str:
 
 def gemini_categoriser(description: str) -> str:
     """
-    Categorises a transaction using the Gemini 1.5 Flash API.
+    Categorises a transaction using the Gemini 1.5 Flash API with the new google.genai SDK.
     """
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         print("GEMINI_API_KEY not found. Falling back to rules categoriser.")
         return rules_categoriser(description)
         
-    genai.configure(api_key=api_key)
-    # Instantiate the Gemini 1.5 Flash model
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    # Instantiate the new Gemini client
+    client = genai.Client(api_key=api_key)
     
     prompt = f"""
     Categorise the following bank transaction description into EXACTLY one of the following categories:
@@ -66,7 +65,10 @@ def gemini_categoriser(description: str) -> str:
     """
     
     try:
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model='gemini-1.5-flash',
+            contents=prompt
+        )
         category = response.text.strip()
         
         # Exact match check to ensure validity
